@@ -12,10 +12,12 @@ type Transaction = {
   industry: string;
   dailySpend: number;
   nextDayDeposit: number;
+  status?: string;
+  requiresApproval?: boolean;
 };
 
 type Deposit = { date: string; amount: number; memo: string };
-type Analysis = { transactions: Transaction[]; deposits: Deposit[] };
+type Analysis = { transactions: Transaction[]; deposits: Deposit[]; demo: boolean };
 type LabelValue = "shared" | "personal";
 type LabelRecord = { transactionId: string; label: LabelValue; updatedAt: string };
 type PredictionFilter = "all" | "shared" | "review" | "personal";
@@ -200,14 +202,28 @@ export function LearningDashboard() {
   const [notice, setNotice] = useState("");
   const [predictionFilter, setPredictionFilter] = useState<PredictionFilter>("all");
   const [workspaceTab, setWorkspaceTab] = useState<WorkspaceTab>("learning");
+  const demoMode = Boolean(analysis?.demo);
 
   useEffect(() => {
-    Promise.all([
-      fetch("/data/transactions.json").then((response) => response.json()),
-      fetch("/api/v2-training").then((response) => response.json()),
-    ])
-      .then(([data, saved]) => {
-        setAnalysis({ transactions: data.transactions || [], deposits: data.deposits || [] });
+    fetch("/data/transactions.json")
+      .then((response) => response.json())
+      .then(async (data) => {
+        const transactions = Array.isArray(data.transactions) ? data.transactions as Transaction[] : [];
+        setAnalysis({ transactions, deposits: data.deposits || [], demo: Boolean(data.demo) });
+        if (data.demo) {
+          const records: LabelRecord[] = transactions
+            .filter((transaction) => transaction.status === "공동지출 확정" || transaction.status === "일반지출")
+            .map((transaction) => ({
+              transactionId: transaction.id,
+              label: transaction.status === "공동지출 확정" ? "shared" : "personal",
+              updatedAt: "demo",
+            }));
+          setHistory(records);
+          setLabels(Object.fromEntries(records.map((record) => [record.transactionId, record.label])));
+          return;
+        }
+        const response = await fetch("/api/v2-training");
+        const saved = await response.json();
         const records = Array.isArray(saved.labels) ? saved.labels as LabelRecord[] : [];
         setHistory(records);
         setLabels(Object.fromEntries(records.map((record) => [record.transactionId, record.label])));
@@ -340,6 +356,12 @@ export function LearningDashboard() {
     const optimistic: LabelRecord = { transactionId: current.id, label, updatedAt: new Date().toISOString() };
     setLabels((saved) => ({ ...saved, [current.id]: label }));
     setHistory((saved) => [optimistic, ...saved.filter((item) => item.transactionId !== current.id)]);
+    if (demoMode) {
+      setNotice("데모 세션에만 반영했습니다. 서버에는 저장되지 않습니다.");
+      window.setTimeout(() => setNotice(""), 1800);
+      setSaving(false);
+      return;
+    }
     try {
       const response = await fetch("/api/v2-training", {
         method: "POST",
@@ -360,12 +382,24 @@ export function LearningDashboard() {
     } finally {
       setSaving(false);
     }
-  }, [current, saving]);
+  }, [current, demoMode, saving]);
 
   const undoLast = useCallback(async () => {
     const latest = history[0];
     if (!latest || saving) return;
     setSaving(true);
+    if (demoMode) {
+      setLabels((saved) => {
+        const next = { ...saved };
+        delete next[latest.transactionId];
+        return next;
+      });
+      setHistory((saved) => saved.slice(1));
+      setNotice("데모 세션의 마지막 선택을 되돌렸습니다.");
+      window.setTimeout(() => setNotice(""), 1400);
+      setSaving(false);
+      return;
+    }
     const response = await fetch(`/api/v2-training?transactionId=${encodeURIComponent(latest.transactionId)}`, {
       method: "DELETE",
     });
@@ -382,7 +416,7 @@ export function LearningDashboard() {
       setNotice("되돌리지 못했습니다.");
     }
     setSaving(false);
-  }, [history, saving]);
+  }, [demoMode, history, saving]);
 
   useEffect(() => {
     const handleKey = (event: KeyboardEvent) => {
@@ -413,6 +447,14 @@ export function LearningDashboard() {
         <nav aria-label="버전 메뉴"><Link href="/">규칙형 Ver.1</Link><button className={workspaceTab === "learning" ? "active" : ""} onClick={() => setWorkspaceTab("learning")}>학습 대시보드</button><button className={workspaceTab === "tree" ? "active" : ""} onClick={() => setWorkspaceTab("tree")}>규칙 발견</button></nav>
         <div className="v2-label-count"><span>{money.format(examples.length)}</span>건 학습됨</div>
       </header>
+
+      {demoMode && (
+        <aside className="demo-banner v2-demo-banner" role="note">
+          <strong>PUBLIC DEMO</strong>
+          <span>익명화 샘플 15건으로 모델 흐름을 체험할 수 있습니다. 선택은 현재 브라우저 세션에만 반영됩니다.</span>
+          <em>개인 데이터·서버 저장 없음</em>
+        </aside>
+      )}
 
       {workspaceTab === "tree" ? <DecisionTreeLab transactions={expenses} labels={labels} /> : <>
       <section className="v2-hero">
@@ -561,7 +603,7 @@ export function LearningDashboard() {
       </section>
       </>}
 
-      <footer className="v2-footer"><div className="brand"><span className="brand-mark v2-mark">V2</span><span>우리지출 LAB</span></div><p>정답은 서버에 저장되며, 모델은 규칙 판정 없이 라벨 패턴으로 다시 학습됩니다.</p></footer>
+      <footer className="v2-footer"><div className="brand"><span className="brand-mark v2-mark">V2</span><span>우리지출 LAB</span></div><p>{demoMode ? "공개 데모 · 선택은 세션에만 반영되며 서버에 저장되지 않습니다." : "정답은 서버에 저장되며, 모델은 규칙 판정 없이 라벨 패턴으로 다시 학습됩니다."}</p></footer>
       {notice && <div className="toast">{notice}</div>}
     </main>
   );

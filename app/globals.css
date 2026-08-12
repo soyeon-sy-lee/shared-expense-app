@@ -39,8 +39,17 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .input-button { border: 1px solid var(--ink); background: transparent; color: var(--ink); border-radius: 999px; padding: 11px 16px; cursor: pointer; font-weight: 800; }
 .input-button span { color: var(--coral); font-size: 16px; }
 .input-button:hover { background: var(--white); }
+.input-button:disabled { border-color: #9aa9a6; background: #e8e5dd; color: #667875; cursor: not-allowed; }
+.input-button:disabled span { color: #667875; }
 .export-button { border: 0; background: var(--ink); color: var(--white); border-radius: 999px; padding: 12px 18px; cursor: pointer; font-weight: 800; box-shadow: 0 8px 20px rgba(21,54,51,.14); }
 .export-button:hover { transform: translateY(-1px); }
+
+.demo-banner { min-height: 48px; padding: 10px max(28px, calc((100vw - 1240px) / 2)); display: flex; align-items: center; gap: 14px; border-bottom: 1px solid #dfc35c; background: #fff0ad; color: #4e4426; font-size: 12px; }
+.demo-banner strong { padding: 5px 8px; background: #172f2d; color: white; font-size: 9px; letter-spacing: .14em; }
+.demo-banner span { font-weight: 700; }
+.demo-banner em { margin-left: auto; padding: 5px 9px; border: 1px solid rgba(78,68,38,.25); border-radius: 999px; font-style: normal; font-size: 10px; font-weight: 900; white-space: nowrap; }
+.v2-demo-banner { background: #e7e2ff; border-color: #b9afff; color: #443d72; }
+.v2-demo-banner strong { background: #705cff; }
 
 .hero { min-height: 560px; padding: 78px max(28px, calc((100vw - 1240px) / 2)) 94px; display: grid; grid-template-columns: 1.05fr .95fr; align-items: center; gap: 70px; position: relative; }
 .hero::before { content: ""; position: absolute; width: 620px; height: 620px; right: -220px; top: -160px; border: 1px solid rgba(120,197,181,.35); border-radius: 50%; box-shadow: inset 0 0 0 85px rgba(120,197,181,.07), inset 0 0 0 170px rgba(120,197,181,.05); }
@@ -225,6 +234,9 @@ footer p { color: #9ab0ac; font-size: 11px; }
 
 @media (max-width: 640px) {
   .topbar { height: 66px; padding: 0 18px; }
+  .demo-banner { align-items: flex-start; flex-wrap: wrap; gap: 8px; padding-inline: 18px; }
+  .demo-banner span { flex: 1 1 70%; line-height: 1.45; }
+  .demo-banner em { margin-left: 0; }
   .export-button { font-size: 0; padding: 11px 15px; }
   .export-button span { font-size: 18px; }
   .input-button { font-size: 0; width: 40px; height: 40px; padding: 0; }

@@ -19,6 +19,8 @@ type Transaction = {
 };
 
 type Analysis = {
+  demo?: boolean;
+  privacyNotice?: string;
   generatedAt: string;
   rawRows: number;
   duplicateRows: number;
@@ -311,12 +313,17 @@ export function SharedExpenseDashboard() {
   useEffect(() => {
     fetch("/data/transactions.json")
       .then((response) => response.json())
-      .then(setAnalysis)
+      .then(async (data: Analysis) => {
+        setAnalysis(data);
+        if (data.demo) {
+          setMonthlyImports([]);
+          return;
+        }
+        const response = await fetch("/api/monthly-imports");
+        const payload = await response.json();
+        setMonthlyImports(Array.isArray(payload.imports) ? payload.imports : []);
+      })
       .catch(() => setToast("분석 결과를 불러오지 못했습니다."));
-    fetch("/api/monthly-imports")
-      .then((response) => response.json())
-      .then((payload) => setMonthlyImports(Array.isArray(payload.imports) ? payload.imports : []))
-      .catch(() => setToast("월별 입력 내역을 불러오지 못했습니다."));
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) setDecisions(JSON.parse(saved));
@@ -402,6 +409,7 @@ export function SharedExpenseDashboard() {
   }), [cardCsv, bankCsv, inputMonth]);
   const dataStart = transactions[0]?.date || analysis?.summary.date_min || "";
   const dataEnd = transactions[transactions.length - 1]?.date || analysis?.summary.date_max || "";
+  const demoMode = Boolean(analysis?.demo);
 
   function updateDecision(id: string, patch: Partial<Decision>) {
     setDecisions((current) => ({
@@ -532,14 +540,22 @@ export function SharedExpenseDashboard() {
           <Link href="/v2">학습형 Ver.2</Link>
         </nav>
         <div className="topbar-actions">
-          <button className="input-button" onClick={() => { setInputError(""); setInputOpen(true); }}>
-            <span aria-hidden="true">＋</span> 월별 데이터 입력
+          <button className="input-button" disabled={demoMode} title={demoMode ? "공개 데모에서는 데이터 입력이 잠겨 있습니다." : undefined} onClick={() => { setInputError(""); setInputOpen(true); }}>
+            <span aria-hidden="true">{demoMode ? "◎" : "＋"}</span> {demoMode ? "공개 데모 · 입력 잠금" : "월별 데이터 입력"}
           </button>
           <button className="export-button" onClick={downloadCsv}>
             소비내역 내보내기 <span aria-hidden="true">↓</span>
           </button>
         </div>
       </header>
+
+      {demoMode && (
+        <aside className="demo-banner" role="note">
+          <strong>PUBLIC DEMO</strong>
+          <span>익명화된 대표 거래 15건만 표시합니다. 실제 카드·계좌 내역과 학습 데이터는 포함되지 않았습니다.</span>
+          <em>업로드·서버 저장 잠금</em>
+        </aside>
+      )}
 
       <section className="hero" id="top">
         <div className="hero-copy">
@@ -699,7 +715,7 @@ export function SharedExpenseDashboard() {
 
       <footer>
         <div className="brand"><span className="brand-mark">우</span><span>우리지출</span></div>
-        <p>카드 원본 {money.format(analysis.rawRows)}행 · 계좌 입금 {money.format(analysis.depositRows || 0)}건 · 중복 {money.format(analysis.duplicateRows + (analysis.duplicateDepositRows || 0))}행 제거 · 결정은 이 기기에 저장됩니다.</p>
+        <p>{demoMode ? "공개 포트폴리오 · 익명화 샘플 15건 · 서버 저장 기능 잠금" : `카드 원본 ${money.format(analysis.rawRows)}행 · 계좌 입금 ${money.format(analysis.depositRows || 0)}건 · 중복 ${money.format(analysis.duplicateRows + (analysis.duplicateDepositRows || 0))}행 제거 · 결정은 이 기기에 저장됩니다.`}</p>
       </footer>
       {inputOpen && (
         <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setInputOpen(false); }}>

@@ -4,12 +4,15 @@ import {
   saveTrainingLabel,
   type TrainingLabel,
 } from "@/db/training-labels";
+import { isPublicDemoRequest, publicDemoWriteResponse } from "@/app/public-demo";
 
-export async function GET() {
+export async function GET(request: Request) {
+  if (isPublicDemoRequest(request)) return Response.json({ labels: [], demo: true });
   return Response.json({ labels: await listTrainingLabels() });
 }
 
 export async function POST(request: Request) {
+  if (isPublicDemoRequest(request)) return publicDemoWriteResponse();
   const payload = (await request.json()) as { transactionId?: string; label?: string };
   const transactionId = payload.transactionId?.trim() || "";
   const label = payload.label as TrainingLabel["label"];
@@ -24,6 +27,7 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  if (isPublicDemoRequest(request)) return publicDemoWriteResponse();
   const transactionId = new URL(request.url).searchParams.get("transactionId") || "";
   if (!/^C-\d{8}-[a-f0-9]{12}$/.test(transactionId)) {
     return Response.json({ error: "올바르지 않은 거래입니다." }, { status: 400 });

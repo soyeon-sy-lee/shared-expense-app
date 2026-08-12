@@ -1,4 +1,5 @@
 import { env } from "cloudflare:workers";
+import { isPublicDemoRequest, publicDemoWriteResponse } from "@/app/public-demo";
 
 type ExpenseInput = {
   date: string;
@@ -41,7 +42,8 @@ function parseRows<T>(value: unknown): T[] {
   }
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  if (isPublicDemoRequest(request)) return Response.json({ imports: [], demo: true });
   await ensureTable();
   const result = await env.DB.prepare(
     "SELECT month, expenses_json, deposits_json, card_filename, bank_filename, updated_at FROM monthly_imports ORDER BY month DESC",
@@ -58,6 +60,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  if (isPublicDemoRequest(request)) return publicDemoWriteResponse();
   const payload = (await request.json()) as {
     month?: string;
     expenses?: ExpenseInput[];
@@ -102,6 +105,7 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  if (isPublicDemoRequest(request)) return publicDemoWriteResponse();
   const month = new URL(request.url).searchParams.get("month") || "";
   if (!/^20\d{2}-(0[1-9]|1[0-2])$/.test(month)) {
     return Response.json({ error: "올바른 연월이 아닙니다." }, { status: 400 });
