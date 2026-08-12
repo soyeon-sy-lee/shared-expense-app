@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import { AppLink, publicPath } from "../app-link";
 import { DecisionTreeLab } from "./decision-tree-lab";
 
 type Transaction = {
@@ -205,7 +205,7 @@ export function LearningDashboard() {
   const demoMode = Boolean(analysis?.demo);
 
   useEffect(() => {
-    fetch("/data/transactions.json")
+    fetch(publicPath("/data/transactions.json"))
       .then((response) => response.json())
       .then(async (data) => {
         const transactions = Array.isArray(data.transactions) ? data.transactions as Transaction[] : [];
@@ -443,8 +443,8 @@ export function LearningDashboard() {
   return (
     <main className="v2-shell">
       <header className="v2-topbar">
-        <Link className="brand" href="/v2"><span className="brand-mark v2-mark">V2</span><span>우리지출 LAB</span></Link>
-        <nav aria-label="버전 메뉴"><Link href="/">규칙형 Ver.1</Link><button className={workspaceTab === "learning" ? "active" : ""} onClick={() => setWorkspaceTab("learning")}>학습 대시보드</button><button className={workspaceTab === "tree" ? "active" : ""} onClick={() => setWorkspaceTab("tree")}>규칙 발견</button></nav>
+        <AppLink className="brand" href="/v2/"><span className="brand-mark v2-mark">V2</span><span>우리지출 LAB</span></AppLink>
+        <nav aria-label="버전 메뉴"><AppLink href="/">규칙형 Ver.1</AppLink><button className={workspaceTab === "learning" ? "active" : ""} onClick={() => setWorkspaceTab("learning")}>학습 대시보드</button><button className={workspaceTab === "tree" ? "active" : ""} onClick={() => setWorkspaceTab("tree")}>규칙 발견</button></nav>
         <div className="v2-label-count"><span>{money.format(examples.length)}</span>건 학습됨</div>
       </header>
 

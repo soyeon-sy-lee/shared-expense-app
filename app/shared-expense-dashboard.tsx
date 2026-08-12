@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import { AppLink, publicPath } from "./app-link";
 
 type Transaction = {
   id: string;
@@ -311,7 +311,7 @@ export function SharedExpenseDashboard() {
   const [inputError, setInputError] = useState("");
 
   useEffect(() => {
-    fetch("/data/transactions.json")
+    fetch(publicPath("/data/transactions.json"))
       .then((response) => response.json())
       .then(async (data: Analysis) => {
         setAnalysis(data);
@@ -537,7 +537,7 @@ export function SharedExpenseDashboard() {
           <a href="#overview">대시보드</a>
           <a href="#transactions">거래 검토</a>
           <a href="#rules">자동화 규칙</a>
-          <Link href="/v2">학습형 Ver.2</Link>
+          <AppLink href="/v2/">학습형 Ver.2</AppLink>
         </nav>
         <div className="topbar-actions">
           <button className="input-button" disabled={demoMode} title={demoMode ? "공개 데모에서는 데이터 입력이 잠겨 있습니다." : undefined} onClick={() => { setInputError(""); setInputOpen(true); }}>
