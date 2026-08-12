@@ -8,7 +8,9 @@
 
 ## Demo
 
-- **웹앱:** 공개 주소 변경 중
+- **웹앱:** https://soyeon-sy-lee.github.io/shared-expense-app/
+- **규칙 기반 V1:** https://soyeon-sy-lee.github.io/shared-expense-app/
+- **학습 기반 V2:** https://soyeon-sy-lee.github.io/shared-expense-app/v2/
 - **GitHub:** https://github.com/soyeon-sy-lee/shared-expense-app
 - **사용 흐름:** 거래 현황 확인 → 공동지출 후보 검토 → 정산 입금 반영 → 실질 소비액 확인
 
